@@ -11,7 +11,8 @@ tumorPileup="samtools mpileup -q 1 -r $regionInterval -f $refGen $tumorBam"
 #-o tmpTumor.pileup $tumorBam &
 #java -jar $VARSCAN somatic tmpNormal.pileup tmpTumor.pileup ${runName}.varscan \
 #--output-vcf 1 > ${runName}.varscan.log
-java -jar $VARSCAN somatic <(${normalPileup}) <(${tumorPileup}) ${runName}.varscan --output-vcf 1
+java -jar $VARSCAN somatic <(${normalPileup}) <(${tumorPileup}) \
+${runName}.varscan --output-vcf 1 2> ${runName}.varscan.log
 
 # post processing
 java -jar $VARSCAN processSomatic ${runName}.varscan.snp.vcf

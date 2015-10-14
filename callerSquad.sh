@@ -203,4 +203,9 @@ echo "$(date): calling done" >> $logFile
 
 # Given output vcf files from different callers on the same data, create a
 # directory containing majority voted result
-
+bcftools isec -p ${runName} -n+2 ${runName}.mutect.PASS.vcf.gz \
+${runName}.varscan.snp.Somatic.hc.vcf.gz \
+${runName}.speedseq.snp.PASS.vcf.gz
+# transform the sites.txt result into BED and raw VCF
+python sites2bed.py ${runName}/sites.txt
+# bedops bed2vcf ${runName}.bed ${runName}.vcf
