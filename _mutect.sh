@@ -10,7 +10,7 @@ java -Xmx2g -jar $MUTECT --analysis_type MuTect \
 --input_file:tumor $tumorBam \
 --input_file:normal $normalBam \
 --vcf ${runName}.mutect.vcf \
-2> ${runName}.mutect.log
+> ${runName}.mutect.log
 # post processing
 bcftools view -i '%FILTER="PASS"' ${runName}.mutect.vcf > ${runName}.mutect.PASS.vcf
 bgzip ${runName}.mutect.PASS.vcf

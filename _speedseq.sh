@@ -8,7 +8,7 @@ $SPEEDSEQ somatic \
 -w $regionBed \
 -t $ntSpeedseq \
 -v \
-$refGen $normalBam $tumorBam > ${runName}.speedseq.log
+$refGen $normalBam $tumorBam #> ${runName}.speedseq.log
 # post processing
 bcftools view -i 'TYPE="snp" & %FILTER="PASS" & STRLEN(ALT)=1' ${runName}.speedseq.vcf.gz > ${runName}.speedseq.snp.PASS.vcf
 bgzip ${runName}.speedseq.snp.PASS.vcf

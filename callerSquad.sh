@@ -28,17 +28,34 @@ usage: callerSquad tumor.bam normal.bam
 
 positional args:
     tumor.bam	path to bam file of tumor sample sequence read alignments,
-		with index in the same dir
+		with index (.bam.bai) in the same dir
     normal.bam	path to bam file of normal sample sequence read alignments,
-		with index in the same dir
+		with index (.bam.bai) in the same dir
 
 options:
     -o, --outBasename
+	All results will be saved to currentRunningDir/outBasename/
+
     -R, --reference
-		FASTA-format reference genome with BW index in same directory
+	FASTA-format reference genome with BW index in same directory
+
     -L, --interval
-		GATK interval format of target genomic region
-    
+	GATK/picard interval list of target genomic regions for calling, file 
+	suffix must be ".intervals". Alternatively, give semicolon delimited raw
+	string in this format, like "1:10-1000; 2:20-2000; ..."
+
+    -B, --regionBed
+	BED file of target genomic regions for calling, 0-based start position 
+	and 1-based end position.
+
+    --ntSpeedseq
+	Number of threads to use for multi-thread speedseq somatic. (default 1)
+
+    --help, -h
+	Print this message
+
+Documentations of callerSquad can be found at:
+    https://github.com/Danko-Lab/callerSquad
 "
 }
 
