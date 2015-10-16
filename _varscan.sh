@@ -3,14 +3,8 @@ set -e
 set -u
 set -o pipefail
 
-normalPileup="samtools mpileup -q 1 -r $regionInterval -f $refGen $normalBam"
-tumorPileup="samtools mpileup -q 1 -r $regionInterval -f $refGen $tumorBam"
-#samtools mpileup -q 1 -r $regionInterval -f $refGen \
-#-o tmpNormal.pileup $normalBam &
-#samtools mpileup -q 1 -r $regionInterval -f $refGen \
-#-o tmpTumor.pileup $tumorBam &
-#java -jar $VARSCAN somatic tmpNormal.pileup tmpTumor.pileup ${runName}.varscan \
-#--output-vcf 1 > ${runName}.varscan.log
+normalPileup="samtools mpileup -q 1 -l $regionBed -f $refGen $normalBam"
+tumorPileup="samtools mpileup -q 1 -l $regionBed -f $refGen $tumorBam"
 java -jar $VARSCAN somatic <(${normalPileup}) <(${tumorPileup}) \
 ${runName}.varscan --output-vcf 1 > ${runName}.varscan.log
 
