@@ -14,6 +14,10 @@ fullPath () {
     echo "$(cd $(dirname $1); pwd)/$(basename $1)"
 }
 
+# source code directory
+srcDir=$(cd $(dirname $0); pwd)
+
+
 # global usage
 usage () {
 echo "
@@ -175,9 +179,6 @@ logFile=${runName}.log
 # source bam files with index
 export tumorBam=$(fullPath $1)
 export normalBam=$(fullPath $2)
-# source code directory
-srcDir=$(cd $(dirname $0); pwd)
-
 # disect given regionBed file to 1contig1bed
 refGenDir=$(cd $(dirname $refGen); pwd)
 refGenFai=${refGen}.fai
@@ -185,8 +186,9 @@ contigNames=($(awk '{print $1}' ${refGenFai}))
 mkdir $resultDir; cd $resultDir; mkdir tmpRegion
 # for each contig involved in the bed, create an intervals
 for contig in ${contigNames[@]}; do
-    awk '$1 == $contig' $regionBed > tmpRegion/${contig}.bed
-    if [ test -s ${contig}.bed ]
+    echo 'making contig bed '$contig
+    awk '$1=='$contig $regionBed > tmpRegion/${contig}.bed
+    if [ -s tmpRegion/${contig}.bed ]
     then
 	java -jar $PICARD BedToIntervalList INPUT=tmpRegion/${contig}.bed \
 	SD=$(echo $refGen | sed 's/.fa/.dict/') OUTPUT=tmpRegion/${contig}.intervals
@@ -203,9 +205,9 @@ echo "$(date): all set, start calling" >> $logFile
 #source ${srcDir}/_speedseq.sh &
 
 # pass intervals files to mutect --intervals option
-find tmpRegion/ -name '*.intervals' | xargs -n 1 -P $nt ${srcDir}/_mutect.sh &
-find tmpRegion/ -name '*.bed' | xargs -n 1 -P $nt ${srcDir}/_varscan.sh &
-find tmpRegion/ -name '*.bed' | xargs -n 1 -P $nt ${srcDir}/_speedseq.sh &
+find tmpRegion/ -name '*.intervals' | xargs -n 1 -P $nt -I {} ${srcDir}/_mutect.sh {} &
+find tmpRegion/ -name '*.bed' | xargs -n 1 -P $nt -I {} ${srcDir}/_varscan.sh {} &
+find tmpRegion/ -name '*.bed' | xargs -n 1 -P $nt -I {} ${srcDir}/_speedseq.sh {} &
 wait
 #xargs --arg-file=${srcDir}/_callers --max-procs=3 --replace /bin/bash -c "{}"
 echo "$(date): calling done" >> $logFile

@@ -7,7 +7,7 @@ set -o pipefail
 # receive interval file from first commandline arg
 regionInterval=$1
 contig=$(echo $(basename $1) | sed 's/.intervals//')
-
+echo 'calling mutect on contig '$contig
 # call mutect
 java -Xmx2g -jar $MUTECT --analysis_type MuTect \
 --reference_sequence $refGen \
