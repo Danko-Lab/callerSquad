@@ -35,17 +35,17 @@ positional args:
 
 options:
     -o, --outBasename
-	All results will be saved to currentRunningDir/outBasename/
+	All results will be saved to currentRunningDir/outBasename/. (default: 'defaultRun')
 
     -R, --reference
-	FASTA-format reference genome with BW index in same directory
+	FASTA-format reference genome with BW index in same directory. (required)
 
     -B, --regionBed
 	BED file of target genomic regions for calling, 0-based start position 
-	and 1-based end position.
+	and 1-based end position. (required)
 
-    --nt
-	Maximum number of threads to use. (default 1)
+    -t, --numberOfthreads
+	Maximum number of threads to use for each caller program. (default 1)
 
     --help, -h
 	Print this message.
