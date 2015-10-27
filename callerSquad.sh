@@ -14,9 +14,6 @@ fullPath () {
     echo "$(cd $(dirname $1); pwd)/$(basename $1)"
 }
 
-# source code directory
-srcDir=$(cd $(dirname $0); pwd)
-
 # global usage
 usage () {
 echo "
@@ -39,20 +36,15 @@ options:
     -R, --reference
 	FASTA-format reference genome with BW index in same directory
 
-    -L, --interval
-	GATK/picard interval list of target genomic regions for calling, file 
-	suffix must be ".intervals". Alternatively, give semicolon delimited raw
-	string in this format, like "1:10-1000; 2:20-2000; ..."
-
     -B, --regionBed
 	BED file of target genomic regions for calling, 0-based start position 
 	and 1-based end position.
 
-    --ntSpeedseq
-	Number of threads to use for multi-thread speedseq somatic. (default 1)
+    --nt
+	Maximum number of threads to use. (default 1)
 
     --help, -h
-	Print this message
+	Print this message.
 
 Documentations of callerSquad can be found at:
     https://github.com/Danko-Lab/callerSquad
@@ -106,13 +98,13 @@ checkDependencies () {
 }
 checkDependencies
 
+
 # options, default
-runName="defaultRun"
-refGen="/shared_data/genome_db/Homo_sapiens/Ensembl/GRCh37/Sequence/WholeGenomeFasta/genome.fa"
-ntMuTect=1
-ntSpeedseq=1
+export runName="defaultRun"
+export refGen="/shared_data/genome_db/Homo_sapiens/Ensembl/GRCh37/Sequence/WholeGenomeFasta/genome.fa"
 regionInterval="19:1-59128983"
 regionBed=${srcDir}/chr19.bed
+export nt=1
 # show help msg if no arg given
 if test "$#" -lt 1
 then
@@ -129,17 +121,7 @@ do
 		usage
 		exit 1
 	    else
-		refGen=$2
-	    fi
-	    shift; shift;
-	    ;;
-	--interval | -L)
-	    if [[ $2 == -* ]]
-	    then
-		usage
-		exit 1
-	    else
-		regionInterval=$2
+		export refGen=$2
 	    fi
 	    shift; shift;
 	    ;;
@@ -163,21 +145,12 @@ do
 	    fi
 	    shift; shift;
 	    ;;
-	--ntMuTect)
+	--numberOfThreads | -t)
 	    if [[ $2 -lt 1 ]]
 	    then
 		usage
 		exit 1
-	    else ntMuTect=$2
-	    fi
-	    shift; shift;
-	    ;;
-	--ntSpeedseq)
-	    if [[ $2 -lt 1 ]]
-	    then
-		usage
-		exit 1
-	    else ntSpeedseq=$2
+	    else nt=$2
 	    fi
 	    shift; shift;
 	    ;;
@@ -199,30 +172,60 @@ fi
 # build running directory
 resultDir=./${runName}_result
 logFile=${runName}.log
-# source tumor bam file with index
-# precond:
-tumorBam=$(fullPath $1)
-#echo "$(date): tumor bam checked $tumorBam"
-# precond:
-# source normal bam file with index
-normalBam=$(fullPath $2)
-#echo "$(date): normal bam checked $normalBam"
-mkdir $resultDir; cd $resultDir
+# source bam files with index
+export tumorBam=$(fullPath $1)
+export normalBam=$(fullPath $2)
+# source code directory
+srcDir=$(cd $(dirname $0); pwd)
+
+# disect given regionBed file to 1contig1bed
+refGenDir=$(cd $(dirname $refGen); pwd)
+refGenFai=${refGen}.fai
+contigNames=($(awk '{print $1}' ${refGenFai}))
+mkdir $resultDir; cd $resultDir; mkdir tmpRegion
+# for each contig involved in the bed, create an intervals
+for contig in ${contigNames[@]}; do
+    awk '$1 == $contig' $regionBed > tmpRegion/${contig}.bed
+    if [ test -s ${contig}.bed ]
+    then
+	java -jar $PICARD BedToIntervalList INPUT=tmpRegion/${contig}.bed \
+	SD=$(echo $refGen | sed 's/.fa/.dict/') OUTPUT=tmpRegion/${contig}.intervals
+    else
+	rm tmpRegion/${contig}.bed
+    fi
+done
+
 
 # run mutect, varscan, speedseq
 echo "$(date): all set, start calling" >> $logFile
-source ${srcDir}/_mutect.sh &
-source ${srcDir}/_varscan.sh &
-source ${srcDir}/_speedseq.sh &
+#source ${srcDir}/_mutect.sh &
+#source ${srcDir}/_varscan.sh &
+#source ${srcDir}/_speedseq.sh &
+
+# pass intervals files to mutect --intervals option
+find tmpRegion/ -name '*.intervals' | xargs -n 1 -P $nt ${srcDir}/_mutect.sh &
+find tmpRegion/ -name '*.bed' | xargs -n 1 -P $nt ${srcDir}/_varscan.sh &
+find tmpRegion/ -name '*.bed' | xargs -n 1 -P $nt ${srcDir}/_speedseq.sh &
 wait
 #xargs --arg-file=${srcDir}/_callers --max-procs=3 --replace /bin/bash -c "{}"
 echo "$(date): calling done" >> $logFile
 
+# concat all results
+find . -name '*.mutect.PASS.vcf.gz' | xargs \
+bcftools concat -O z -o ${runName}.mutect.final.vcf.gz
+find . -name '*.varscan.snp.Somatic.hc.vcf.gz' | xargs \
+bcftools concat -O z -o ${runName}.varscan.final.vcf.gz
+find . -name '*.speedseq.snp.PASS.vcf.gz' | xargs \
+bcftools concat -O z -o ${runName}.speedseq.final.vcf.gz
+echo "$(date): concatenation done" >> $logFile
+
 # Given output vcf files from different callers on the same data, create a
 # directory containing majority voted result
-bcftools isec -p ${runName} -n+2 ${runName}.mutect.PASS.vcf.gz \
-${runName}.varscan.snp.Somatic.hc.vcf.gz \
-${runName}.speedseq.snp.PASS.vcf.gz
+bcftools isec -p ${runName} -n+2 \
+${runName}.mutect.final.vcf.gz \
+${runName}.varscan.final.vcf.gz \
+${runName}.speedseq.final.vcf.gz
 # transform the sites.txt result into BED and raw VCF
 python sites2bed.py ${runName}/sites.txt
+mv ${runName}/sites.bed ${runName}/${runName}.bed
 # bedops bed2vcf ${runName}.bed ${runName}.vcf
