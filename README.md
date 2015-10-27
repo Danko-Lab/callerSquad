@@ -29,8 +29,20 @@ Group voting based ensembl somatic mutation caller.
 These bam files should be whole/targeted genome sequencing of tumor/normal samples from the same patient aligned to the same reference genome, e.g. TCGA WGS.
 
 #### Reference genome
-IMPORTANT: in the BAM header lines tagged @, 
+Check your bam file header for the correct reference genome used for alignment, download the fasta file, and prepare it as described in: http://gatkforums.broadinstitute.org/discussion/2798/howto-prepare-a-reference-for-use-with-bwa-and-gatk
 
 ## Running callerSquad
+#### Usage
 
-## Examples
+#### Example
+	```
+	/path/to/source/code/callerSquad.sh \
+	-o exampleName \
+	-t 2 \ # use 2 threads for each caller
+	-R /path/to/reference/genome/GRCh37-lite.fa \ # make sure .fai .dict .deflines are in the same place as .fa
+	-B /home/xy293/Data/test/ceph18.b37.include.2014-01-15.bed \ # make sure bed match ref genome
+	/path/to/tumor.bam \
+	/path/to/normal.bam
+	```
+
+#### Output
