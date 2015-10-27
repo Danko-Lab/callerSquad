@@ -38,7 +38,7 @@ Program: callerSquad
 Version: 0.1.0
 Author: Xiaotong Yao (xy293@cornell.edu)
 
-usage: callerSquad tumor.bam normal.bam
+usage: callerSquad [OPTIONS] tumor.bam normal.bam
 
 positional args:
     tumor.bam	path to bam file of tumor sample sequence read alignments,
