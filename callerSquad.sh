@@ -200,9 +200,6 @@ done
 
 # run mutect, varscan, speedseq
 echo "$(date): all set, start calling" >> $logFile
-#source ${srcDir}/_mutect.sh &
-#source ${srcDir}/_varscan.sh &
-#source ${srcDir}/_speedseq.sh &
 
 # pass intervals files to mutect --intervals option
 find tmpRegion/ -name '*.intervals' | xargs -n 1 -P $nt -I {} ${srcDir}/_mutect.sh {} &
@@ -221,6 +218,11 @@ find . -name '*.speedseq.snp.PASS.vcf.gz' | xargs \
 bcftools concat -O z -o ${runName}.speedseq.final.vcf.gz
 echo "$(date): concatenation done" >> $logFile
 
+# index all final results
+bcftools index -t ${runName}.mutect.final.vcf.gz
+bcftools index -t ${runName}.varscan.final.vcf.gz
+bcftools index -t ${runName}.speedseq.final.vcf.gz
+
 # Given output vcf files from different callers on the same data, create a
 # directory containing majority voted result
 bcftools isec -p ${runName} -n+2 \
@@ -228,6 +230,6 @@ ${runName}.mutect.final.vcf.gz \
 ${runName}.varscan.final.vcf.gz \
 ${runName}.speedseq.final.vcf.gz
 # transform the sites.txt result into BED and raw VCF
-python sites2bed.py ${runName}/sites.txt
+python ${srcDir}/sites2bed.py ${runName}/sites.txt
 mv ${runName}/sites.bed ${runName}/${runName}.bed
 # bedops bed2vcf ${runName}.bed ${runName}.vcf
