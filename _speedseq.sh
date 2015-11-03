@@ -6,7 +6,7 @@ set -o pipefail
 # receive bed file from commandline arg
 regionBed=$1
 contig=$(echo $(basename $1) | sed 's/.bed//')
-echo 'calling speedseq on contig '$contig
+echo 'calling speedseq on contig '$contig >> $logFile
 
 $SPEEDSEQ somatic \
 -o ${runName}.${contig}.speedseq \

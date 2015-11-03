@@ -35,10 +35,12 @@ positional args:
 
 options:
     -o, --outBasename
-	All results will be saved to currentRunningDir/outBasename/. (default: 'defaultRun')
+	All results will be saved to currentRunningDir/outBasename/. 
+	(default: 'defaultRun')
 
     -R, --reference
-	FASTA-format reference genome with BW index in same directory. (required)
+	FASTA-format reference genome with BW index in same directory. 
+	(required)
 
     -B, --regionBed
 	BED file of target genomic regions for calling, 0-based start position 
@@ -105,7 +107,8 @@ checkDependencies
 
 # options, default
 export runName="defaultRun"
-export refGen="/shared_data/genome_db/Homo_sapiens/Ensembl/GRCh37/Sequence/WholeGenomeFasta/genome.fa"
+export refGen="/shared_data/genome_db/Homo_sapiens/Ensembl/GRCh37/Sequence
+/WholeGenomeFasta/genome.fa"
 regionInterval="19:1-59128983"
 regionBed=${srcDir}/chr19.bed
 export nt=1
@@ -175,7 +178,7 @@ fi
 
 # build running directory
 resultDir=./${runName}_result
-logFile=${runName}.log
+export logFile=${runName}.log
 # source bam files with index
 export tumorBam=$(fullPath $1)
 export normalBam=$(fullPath $2)
@@ -190,8 +193,10 @@ for contig in ${contigNames[@]}; do
     awk '$1=='$contig $regionBed > tmpRegion/${contig}.bed
     if [ -s tmpRegion/${contig}.bed ]
     then
-	java -jar $PICARD BedToIntervalList INPUT=tmpRegion/${contig}.bed \
-	SD=$(echo $refGen | sed 's/.fa/.dict/') OUTPUT=tmpRegion/${contig}.intervals
+	java -jar $PICARD BedToIntervalList \
+	INPUT=tmpRegion/${contig}.bed \
+	SD=$(echo $refGen | sed 's/.fa/.dict/') \
+	OUTPUT=tmpRegion/${contig}.intervals
     else
 	rm tmpRegion/${contig}.bed
     fi
@@ -202,11 +207,15 @@ done
 echo "$(date): all set, start calling" >> $logFile
 
 # pass intervals files to mutect --intervals option
-find tmpRegion/ -name '*.intervals' | xargs -n 1 -P $nt -I {} ${srcDir}/_mutect.sh {} &
-find tmpRegion/ -name '*.bed' | xargs -n 1 -P $nt -I {} ${srcDir}/_varscan.sh {} &
-find tmpRegion/ -name '*.bed' | xargs -n 1 -P $nt -I {} ${srcDir}/_speedseq.sh {} &
+find tmpRegion/ -name '*.intervals' | xargs -n 1 -P $nt -I {} \
+${srcDir}/_mutect.sh {} &
+find tmpRegion/ -name '*.bed' | xargs -n 1 -P $nt -I {} \
+${srcDir}/_varscan.sh {} &
+find tmpRegion/ -name '*.bed' | xargs -n 1 -P $nt -I {} \
+${srcDir}/_speedseq.sh {} &
+find tmpRegion/ -name '*.intervals' | xargs -n 1 -P $nt -I {} \
+${srcDir}/_haplotypeCaller.sh {} &
 wait
-#xargs --arg-file=${srcDir}/_callers --max-procs=3 --replace /bin/bash -c "{}"
 echo "$(date): calling done" >> $logFile
 
 # concat all results
