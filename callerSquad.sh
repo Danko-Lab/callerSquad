@@ -225,6 +225,8 @@ find . -name '*.varscan.snp.Somatic.hc.vcf.gz' | xargs \
 bcftools concat -O z -o ${runName}.varscan.final.vcf.gz
 find . -name '*.speedseq.snp.PASS.vcf.gz' | xargs \
 bcftools concat -O z -o ${runName}.speedseq.final.vcf.gz
+find . -name '*.haplotypeCaller.vcf' | xargs \
+bcftools concat -O z -o ${runName}.germline.final.vcf.gz
 echo "$(date): concatenation done" >> $logFile
 
 # index all final results

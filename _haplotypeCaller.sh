@@ -8,6 +8,7 @@ set -o pipefail
 regionInterval=$1
 contig=$(echo $(basename $1) | sed 's/.intervals//')
 echo 'calling haplotypeCaller on contig '$contig >> $logFile
+
 # call haplotypeCaller
 java -Xmx2g -jar $GATK --analysis_type HaplotypeCaller \
 --reference_sequence $refGen \
