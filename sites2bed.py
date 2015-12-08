@@ -16,8 +16,8 @@ for site in siteF:
     chr = parts[0]
     start = str(int(parts[1]) - 1)
     end = parts[1]
-    name = parts[2] + '/' + parts[3]
-    score = parts[4]
+    name = parts[2]
+    score = parts[3] + '\n'
     outF.write("\t".join([chr, start, end, name, score]))
 outF.close()
 siteF.close()
